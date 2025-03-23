@@ -36,6 +36,6 @@ node_groups = {
 
 # Service Admin Passwords
 # In a production environment, you would use a secrets manager instead of storing these in plain text
-jenkins_admin_password   = "ChangeMe123!"       # Replace with a secure password
-sonarqube_admin_password = "SonarPassword123!"  # Replace with a secure password
-nexus_admin_password     = "NexusPassword123!"  # Replace with a secure password
+jenkins_admin_password   = ""       # Replace with a secure password
+sonarqube_admin_password = ""  # Replace with a secure password
+nexus_admin_password     = ""  # Replace with a secure password

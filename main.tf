@@ -18,12 +18,12 @@ module "eks" {
 module "jenkins" {
   source = "./modules/jenkins"
 
-  cluster_id            = module.eks.cluster_id
+  cluster_id           = module.eks.cluster_id
   cluster_endpoint      = module.eks.cluster_endpoint
   cluster_ca_certificate = module.eks.cluster_ca_certificate
   namespace             = "jenkins"
   storage_class_name    = "gp2"
-  admin_password        = var.jenkins_admin_password
+  jenkins_admin_password = var.jenkins_admin_password
 }
 
 # Create SonarQube resources

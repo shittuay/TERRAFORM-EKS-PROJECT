@@ -1,0 +1,1 @@
+{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"eks","Source":"./modules/eks","Dir":""},{"Key":"jenkins","Source":"./modules/jenkins","Dir":""},{"Key":"nexus","Source":"./modules/nexus","Dir":""},{"Key":"sonarqube","Source":"./modules/sonarqube","Dir":""}]}

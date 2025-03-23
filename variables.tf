@@ -1,42 +1,36 @@
 variable "aws_region" {
-  description = "AWS region to deploy resources"
+  description = "AWS region"
   type        = string
-  default     = "us-west-2"
+  default     = "us-west-2"  # or your preferred region
 }
-
 variable "cluster_name" {
   description = "Name of the EKS cluster"
   type        = string
-  default     = "devops-cluster"
+}
+
+variable "aws_region" {
+  description = "AWS region where resources will be created"
+  type        = string
 }
 
 variable "cluster_version" {
   description = "Kubernetes version for the EKS cluster"
   type        = string
-  default     = "1.27"
 }
 
 variable "vpc_id" {
-  description = "VPC ID where the EKS cluster will be deployed"
+  description = "ID of the VPC where EKS will be created"
   type        = string
 }
 
 variable "subnet_ids" {
-  description = "List of subnet IDs for the EKS cluster"
+  description = "List of subnet IDs for EKS"
   type        = list(string)
 }
 
 variable "node_groups" {
-  description = "Map of EKS node group configurations"
-  type        = map(any)
-  default = {
-    default_node_group = {
-      desired_capacity = 2
-      max_capacity     = 3
-      min_capacity     = 1
-      instance_types   = ["t3.medium"]
-    }
-  }
+  description = "EKS node group configuration"
+  type        = any
 }
 
 variable "jenkins_admin_password" {
@@ -44,6 +38,20 @@ variable "jenkins_admin_password" {
   type        = string
   sensitive   = true
 }
+
+variable "sonarqube_admin_password" {
+  description = "Admin password for SonarQube"
+  type        = string
+  sensitive   = true
+}
+
+variable "nexus_admin_password" {
+  description = "Admin password for Nexus"
+  type        = string
+  sensitive   = true
+}
+
+
 
 variable "sonarqube_admin_password" {
   description = "Admin password for SonarQube"
@@ -77,8 +85,32 @@ variable "namespace" {
   sensitive = true
 }
 
-variable "nexus_admin_password" {
-  description = "Admin password for Nexus repository manager"
+variable "cluster_id" {
+  description = "EKS cluster ID"
   type        = string
-  sensitive   = true
+}
+
+variable "cluster_endpoint" {
+  description = "EKS cluster endpoint"
+  type        = string
+}
+
+variable "cluster_ca_certificate" {
+  description = "EKS cluster CA certificate"
+  type        = string
+}
+
+variable "namespace" {
+  description = "Kubernetes namespace for Jenkins"
+  type        = string
+}
+
+variable "storage_class_name" {
+  description = "Storage class name for Jenkins PVC"
+  type        = string
+}
+
+variable "admin_password" {
+  description = "Jenkins admin password"
+  type        = string
 }
