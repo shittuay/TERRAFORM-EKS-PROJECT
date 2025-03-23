@@ -1,0 +1,116 @@
+pipeline {
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: maven
+    image: maven:3.8.6-openjdk-11
+    command:
+    - cat
+    tty: true
+  - name: docker
+    image: docker:20.10.17-dind
+    privileged: true
+    command:
+    - cat
+    tty: true
+  - name: kubectl
+    image: bitnami/kubectl:1.24.3
+    command:
+    - cat
+    tty: true
+"""
+        }
+    }
+    
+    environment {
+        NEXUS_URL = "http://nexus-nexus-repository-manager.nexus:8081"
+        NEXUS_REPOSITORY = "maven-releases"
+        NEXUS_CREDENTIAL_ID = "nexus-credentials"
+        SONAR_URL = "http://sonarqube-sonarqube.sonarqube:9000"
+        SONAR_CREDENTIAL_ID = "sonar-credentials"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Build and Test') {
+            steps {
+                container('maven') {
+                    sh 'mvn clean package'
+                }
+            }
+        }
+        
+        stage('SonarQube Analysis') {
+            steps {
+                container('maven') {
+                    withSonarQubeEnv(credentialsId: "${SONAR_CREDENTIAL_ID}", installationName: 'SonarQube') {
+                        sh 'mvn sonar:sonar -Dsonar.host.url=${SONAR_URL}'
+                    }
+                }
+            }
+        }
+        
+        stage('Publish to Nexus') {
+            steps {
+                container('maven') {
+                    withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIAL_ID}", passwordVariable: 'NEXUS_PASSWORD', usernameVariable: 'NEXUS_USERNAME')]) {
+                        sh """
+                        mvn deploy -DskipTests \
+                        -DrepositoryId=nexus \
+                        -Durl=${NEXUS_URL}/repository/${NEXUS_REPOSITORY} \
+                        -Dusername=${NEXUS_USERNAME} \
+                        -Dpassword=${NEXUS_PASSWORD}
+                        """
+                    }
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                container('docker') {
+                    sh 'docker build -t myapp:${BUILD_NUMBER} .'
+                    sh 'docker tag myapp:${BUILD_NUMBER} ${NEXUS_URL}:5000/myapp:${BUILD_NUMBER}'
+                    withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIAL_ID}", passwordVariable: 'NEXUS_PASSWORD', usernameVariable: 'NEXUS_USERNAME')]) {
+                        sh 'echo ${NEXUS_PASSWORD} | docker login ${NEXUS_URL}:5000 -u ${NEXUS_USERNAME} --password-stdin'
+                        sh 'docker push ${NEXUS_URL}:5000/myapp:${BUILD_NUMBER}'
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy to Kubernetes') {
+            steps {
+                container('kubectl') {
+                    withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                        sh '''
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl set image deployment/myapp myapp=${NEXUS_URL}:5000/myapp:${BUILD_NUMBER}
+                        '''
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo 'Pipeline completed'
+        }
+        success {
+            echo 'Successfully completed'
+        }
+        failure {
+            echo 'Failed'
+        }
+    }
+}
